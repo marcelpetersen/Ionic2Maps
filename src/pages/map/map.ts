@@ -2,7 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 
 import { NavController, Platform} from 'ionic-angular';
 
-import { GoogleMap, GoogleMapsEvent, GoogleMapsLatLng } from 'ionic-native';
+import { GoogleMap, GoogleMapsEvent, GoogleMapsLatLng, CameraPosition } from 'ionic-native';
 
 @Component({
   selector: 'page-map',
@@ -19,7 +19,8 @@ export class MapPage {
   }
 
   ionViewDidEnter(){
-    let location = new GoogleMapsLatLng(-34.9290,138.6010);
+      let env = this;
+      let location = new GoogleMapsLatLng(-34.9290,138.6010);
 
         this.map = new GoogleMap('map', {
           'backgroundColor': 'white',
@@ -45,6 +46,18 @@ export class MapPage {
 
         this.map.on(GoogleMapsEvent.MAP_READY).subscribe(() => {
             console.log('Map is ready!');
+            env.map.getMyLocation()
+            .then(function(result) {
+              let position: CameraPosition = {
+                target: result.latLng,
+                zoom: 18,
+                tilt: 30
+              }
+              env.map.moveCamera(position);
+            }, function (error) {
+                console.log(error);
+            })
+
         });
   }
 }
