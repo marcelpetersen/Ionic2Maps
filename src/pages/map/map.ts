@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, NgZone } from '@angular/core';
 
 import { NavController, Platform} from 'ionic-angular';
 
-import { GoogleMap, GoogleMapsEvent, CameraPosition } from 'ionic-native';
+import { GoogleMap, GoogleMapsEvent, GoogleMapsLatLng ,CameraPosition } from 'ionic-native';
 
 @Component({
   selector: 'page-map',
@@ -13,9 +13,11 @@ export class MapPage {
   map: GoogleMap;
   autocomplete: any;
   GooglePlaces: any;
+  geocoder: any
   autocompleteItems: any
 
-  constructor(public navCtrl: NavController, public platform: Platform) {
+  constructor(public navCtrl: NavController, public platform: Platform, public zone: NgZone) {
+    this.geocoder = new google.maps.Geocoder;
     this.GooglePlaces = new google.maps.places.AutocompleteService();
     this.autocomplete = {
       input: ''
@@ -69,10 +71,35 @@ export class MapPage {
   }
 
   updateSearch(){
-    console.log(this.autocomplete.input);
+    if (this.autocomplete.input == '') {
+      this.autocompleteItems = [];
+      return;
+    }
+    let env = this;
+    this.GooglePlaces.getPlacePredictions({ input: this.autocomplete.input }, function (predictions, status) {
+      env.autocompleteItems = [];
+      env.zone.run(function () {
+        predictions.forEach(function (prediction) {
+          env.autocompleteItems.push(prediction);
+        });
+      });
+    });
   }
 
   chooseItem(item){
-    console.log(item);
+    let env = this;
+    this.geocoder.geocode({'placeId': item.place_id}, function(results, status) {
+      if(status === 'OK'){
+        if(results[0]){
+          let position: CameraPosition = {
+            target: results[0].geometry.location,
+            zoom: 18,
+            tilt: 30
+          }
+          env.map.moveCamera(position);
+        }
+      }
+    })
   }
+
 }
